@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useSupabase } from '../contexts/SupabaseContext';
+import { supabase } from '../lib/supabase';
 import { PredefinedTour } from '../types';
 import { MapPin, Clock, Euro, Users, Ship } from 'lucide-react';
 
 function ExplorePage() {
-  const { supabase } = useSupabase();
   const [tours, setTours] = useState<PredefinedTour[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
