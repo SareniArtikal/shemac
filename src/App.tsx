@@ -1,9 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
-import LandingPage from './pages/LandingPage';
-import TourBuilderPage from './pages/TourBuilderPage';
-import ExplorePage from './pages/ExplorePage';
+import ToursPage from './pages/ToursPage';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminLogin from './pages/admin/AdminLoginPage';
 import AdminSettings from './pages/admin/AdminSettingsPage';
@@ -14,9 +12,8 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<LandingPage />} />
-        <Route path="build" element={<TourBuilderPage />} />
-        <Route path="tours" element={<ExplorePage />} />
+        <Route index element={<Navigate to="/tours" replace />} />
+        <Route path="tours" element={<ToursPage />} />
       </Route>
       
       <Route path="/admin/login" element={<AdminLogin />} />

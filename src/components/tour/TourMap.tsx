@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap, Circle } from 'react-leaflet';
 import * as turf from '@turf/turf';
-import { MarkerPoint, TourSettings } from '../../types';
+import { MarkerPoint, TourSettings, PredefinedTour } from '../../types';
 
 interface TourMapProps {
   points: MarkerPoint[];
@@ -10,6 +10,8 @@ interface TourMapProps {
   onPointSelected: (lat: number, lng: number) => void;
   onPointRemoved: (pointId: number) => void;
   onCalculateDistance: (distance: number) => void;
+  predefinedTours?: PredefinedTour[];
+  mode?: 'choosing' | 'explore' | 'build';
 }
 
 // Custom marker icon with number
@@ -30,6 +32,14 @@ const startIcon = L.divIcon({
   iconAnchor: [16, 16],
 });
 
+// Predefined tour icon
+const tourIcon = L.divIcon({
+  className: 'tour-marker-icon',
+  html: `<div class="w-8 h-8 rounded-full bg-accent-500 text-white font-bold flex items-center justify-center border-2 border-white shadow-md">T</div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
+
 // Custom component to handle map center
 function SetViewAndEvents({ center, zoom, onMapClick }: { center: L.LatLngExpression, zoom: number, onMapClick: (e: L.LeafletMouseEvent) => void }) {
   const map = useMap();
@@ -46,7 +56,7 @@ function SetViewAndEvents({ center, zoom, onMapClick }: { center: L.LatLngExpres
   return null;
 }
 
-function TourMap({ points, settings, onPointSelected, onPointRemoved, onCalculateDistance }: TourMapProps) {
+function TourMap({ points, settings, onPointSelected, onPointRemoved, onCalculateDistance, predefinedTours = [], mode = 'build' }: TourMapProps) {
   // Split, Croatia coordinates
   const splitCoordinates: [number, number] = [43.5081, 16.4402];
   const [radiusVisible, setRadiusVisible] = useState(true);
@@ -67,6 +77,8 @@ function TourMap({ points, settings, onPointSelected, onPointRemoved, onCalculat
 
   // Handle map click to add points
   const handleMapClick = (e: L.LeafletMouseEvent) => {
+    if (mode !== 'build') return;
+    
     const { lat, lng } = e.latlng;
     
     // Check if we have settings and a max distance radius
@@ -99,7 +111,7 @@ function TourMap({ points, settings, onPointSelected, onPointRemoved, onCalculat
     : [];
   
   return (
-    <div className="h-[500px] w-full rounded-xl overflow-hidden shadow-md">
+    <div className="h-full w-full">
       <MapContainer
         center={splitCoordinates}
         zoom={10}
@@ -129,7 +141,7 @@ function TourMap({ points, settings, onPointSelected, onPointRemoved, onCalculat
         </Marker>
         
         {/* Maximum distance radius */}
-        {radiusVisible && settings && settings.max_distance_radius > 0 && (
+        {radiusVisible && settings && settings.max_distance_radius > 0 && mode === 'build' && (
           <Circle 
             center={splitCoordinates}
             radius={settings.distance_radius_unit === 'miles' 
@@ -146,8 +158,46 @@ function TourMap({ points, settings, onPointSelected, onPointRemoved, onCalculat
           />
         )}
         
-        {/* Tour Points */}
-        {points.map((point, index) => (
+        {/* Predefined Tours */}
+        {(mode === 'explore' || mode === 'choosing') && predefinedTours.map((tour) => (
+          <React.Fragment key={tour.id}>
+            <Marker 
+              position={tour.route_coordinates[0]} 
+              icon={tourIcon}
+            >
+              <Popup>
+                <div className="p-2">
+                  <h3 className="font-bold text-lg mb-2">{tour.name}</h3>
+                  <p className="text-gray-600 mb-2">{tour.description}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {tour.display_price && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {tour.display_price}€
+                      </span>
+                    )}
+                    {tour.display_duration && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {tour.display_duration}
+                      </span>
+                    )}
+                  </div>
+                  <button className="mt-3 w-full px-4 py-2 bg-ocean-medium text-white rounded-md hover:bg-ocean-dark transition-colors">
+                    Book Now
+                  </button>
+                </div>
+              </Popup>
+            </Marker>
+            <Polyline 
+              positions={tour.route_coordinates}
+              color="#14B8A6"
+              weight={3}
+              opacity={0.6}
+            />
+          </React.Fragment>
+        ))}
+        
+        {/* Custom Tour Points */}
+        {mode === 'build' && points.map((point, index) => (
           <Marker 
             key={point.id} 
             position={point.position} 
@@ -165,8 +215,8 @@ function TourMap({ points, settings, onPointSelected, onPointRemoved, onCalculat
           </Marker>
         ))}
         
-        {/* Polyline connecting the points */}
-        {polylinePositions.length > 1 && (
+        {/* Custom Tour Polyline */}
+        {mode === 'build' && polylinePositions.length > 1 && (
           <Polyline 
             positions={polylinePositions} 
             color="#0EA5E9"
